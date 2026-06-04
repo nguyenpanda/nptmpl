@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}{% endblock %} | {{ site_meta.title }}</title>
+    <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', path='media/favicon/favicon.ico') }}">
+    <link rel="stylesheet" href="{{ url_for('static', path='css/main.css') }}">
+    <style>
+        :root {
+            --theme-color: {{ site_meta.theme_hex }};
+            --theme-glow: {{ site_meta.theme_glow }};
+        }
+        {% block extra_css %}{% endblock %}
+    </style>
+</head>
+<body id="mainBody" class="terminal-bg text-slate-200 min-h-screen selection:bg-{{ site_meta.theme_color }}/30 selection:text-white {% block body_class %}{% endblock %}">
+    <!-- Neon Scanner Line -->
+    <div class="fixed top-0 left-0 w-full h-[1px] neon-bg opacity-30 z-[100] animate-scan"></div>
+
+    <nav class="sticky top-0 z-50 terminal-bg border-b terminal-border backdrop-blur-2xl bg-opacity-80">
+        <div class="max-w-full mx-auto px-6 lg:px-12">
+            <div class="flex justify-between h-20 items-center">
+                <div class="flex items-center group cursor-pointer">
+                    <div class="w-10 h-10 bg-black rounded-lg flex items-center justify-center border terminal-border group-hover:neon-border transition-all duration-500 overflow-hidden">
+                        <img src="{{ url_for('static', path='media/png/logo_black_bg.png') }}" alt="Logo" class="w-6 h-6 filter brightness-125">
+                    </div>
+                    <div class="ml-4">
+                        <a href="/" class="text-lg font-black tracking-tighter text-white group-hover:neon-text transition-all">{{ site_meta.logo_text }}</a>
+                        <div class="flex items-center gap-2 mt-0.5">
+                            <span class="w-1.5 h-1.5 rounded-full neon-bg"></span>
+                            <p class="text-[9px] uppercase tracking-[0.4em] font-black text-zinc-400 leading-none">V{{ app_version }}_PRO</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-10">
+                    <a href="/docs" class="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-300 hover:neon-text transition-all">/DOCS</a>
+                    <a href="/about" class="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-300 hover:neon-text transition-all">/ABOUT</a>
+                    <a href="/admin" class="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-300 hover:neon-text transition-all">/ADMIN</a>
+                    {% if request.session.get('user') %}
+                    <a href="/logout" class="text-[10px] font-black uppercase tracking-[0.2em] text-rose-500 hover:text-rose-400 transition-all">/LOGOUT</a>
+                    {% endif %}
+                    <a href="{{ site_meta.github_url }}" target="_blank" class="px-5 py-2.5 bg-black border terminal-border text-white text-[10px] font-black hover:neon-border transition-all tracking-widest rounded">GITHUB</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    {% block content %}{% endblock %}
+
+    <footer class="mt-20 py-16 border-t terminal-border text-center">
+        {% block footer_extra %}{% endblock %}
+        <p class="text-[9px] font-black text-zinc-600 tracking-[0.5em] uppercase">
+            {{ site_meta.logo_text.upper() }} // &copy; 2024 {{ site_meta.author_name.upper().replace(' ', '') }} // POWERED_BY_NPTMPL
+        </p>
+    </footer>
+
+    <script src="{{ url_for('static', path='js/main.js') }}"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

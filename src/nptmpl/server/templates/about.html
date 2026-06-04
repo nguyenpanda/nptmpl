@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block title %}About{% endblock %}
+
+{% block content %}
+<main class="max-w-5xl mx-auto px-6 py-24">
+    <div class="glass p-12 rounded-3xl shadow-2xl relative overflow-hidden border-2 terminal-border">
+        <!-- Decorative Glows -->
+        <div class="absolute -top-24 -right-24 w-96 h-96 neon-bg opacity-5 rounded-full blur-[100px]"></div>
+        <div class="absolute -bottom-24 -left-24 w-96 h-96 neon-bg opacity-5 rounded-full blur-[100px]"></div>
+
+        <div class="flex flex-col md:flex-row gap-16 items-center md:items-start relative z-10">
+            <div class="shrink-0">
+                <div class="w-48 h-48 rounded-2xl border-2 terminal-border p-1.5 relative group hover:neon-border transition-all duration-700">
+                    <div class="w-full h-full rounded-xl bg-black overflow-hidden">
+                        <img src="{{ url_for('static', path='media/png/logo_black_bg.png') }}" alt="Author" class="w-full h-full object-cover filter brightness-110">
+                    </div>
+                    <div class="absolute -inset-0.5 neon-bg opacity-0 group-hover:opacity-10 transition-all duration-700 blur-xl rounded-2xl"></div>
+                </div>
+            </div>
+
+            <div class="flex-1 text-center md:text-left">
+                <div class="inline-block px-3 py-1 border terminal-border rounded-full mb-6 bg-zinc-900/40">
+                    <span class="text-[8px] font-black tracking-[0.5em] text-zinc-400 uppercase">Profile_Authorized</span>
+                </div>
+                <h1 class="text-5xl font-black text-white tracking-tighter mb-3">{{ site_meta.author_name }}</h1>
+                <p class="neon-text font-black text-xs uppercase tracking-[0.3em] mb-10">Undergraduate @ HCMUT | HPC Researcher</p>
+                
+                <div class="space-y-8 text-zinc-300 leading-relaxed text-sm font-medium">
+                    <p>
+                        Hello, I am <span class="text-white font-black underline decoration-{{ site_meta.theme_color }}/40 decoration-2 underline-offset-8">nguyenpanda</span>.
+                    </p>
+                    <p>
+                        I'm an undergraduate at HCMUT, researching <span class="text-white font-black">High-Performance Computing (HPC)</span>, 
+                        focusing on load balancing algorithms, GPU optimization, and parallel computing at <a href="https://ist.hcmut.edu.vn" target="_blank" class="neon-text font-black hover:underline underline-offset-8">iST</a> and <a href="https://hpcc.vn" target="_blank" class="neon-text font-black hover:underline underline-offset-8">HPCC</a>.
+                    </p>
+                    <p>
+                        I'm a builder who loves engineering software from scratch to understand how they work. I'm passionate about low-level systems: computer architecture, operating systems, and networks.
+                    </p>
+                    <p>
+                        Long-term, I'm pursuing a PhD to work on problems that blend theoretical depth with real-world performance engineering.
+                    </p>
+                </div>
+
+                <div class="mt-12 flex flex-wrap justify-center md:justify-start gap-6">
+                    <a href="https://nguyenpanda.com" target="_blank" class="px-10 py-4 neon-bg text-black font-black text-[10px] uppercase tracking-[0.2em] rounded-xl hover:brightness-125 transition-all">
+                        Visit Portfolio ↗
+                    </a>
+                    <a href="{{ site_meta.github_url }}" target="_blank" class="px-10 py-4 bg-zinc-900 border-2 terminal-border text-white font-black text-[10px] uppercase tracking-[0.2em] rounded-xl hover:neon-border transition-all">
+                        GITHUB_REPO
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-24 border-t border-zinc-900 pt-16">
+            <h2 class="text-[10px] font-black text-zinc-500 uppercase tracking-[0.5em] mb-10 text-center md:text-left">RESEARCH_AFFILIATIONS</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <a href="https://ist.hcmut.edu.vn" target="_blank" class="p-8 bg-zinc-900/30 border-2 terminal-border rounded-2xl hover:neon-border-hover transition-all group">
+                    <h3 class="text-white font-black mb-3 group-hover:neon-text transition-all tracking-tight uppercase text-sm">iST Lab</h3>
+                    <p class="text-[11px] text-zinc-500 leading-relaxed font-medium">Integrated Systems and Technologies Lab at HCMUT.</p>
+                </a>
+                <a href="https://hpcc.vn" target="_blank" class="p-8 bg-zinc-900/30 border-2 terminal-border rounded-2xl hover:neon-border-hover transition-all group">
+                    <h3 class="text-white font-black mb-3 group-hover:neon-text transition-all tracking-tight uppercase text-sm">HPCC</h3>
+                    <p class="text-[11px] text-zinc-500 leading-relaxed font-medium">High Performance Computing Center.</p>
+                </a>
+            </div>
+        </div>
+    </div>
+</main>
+{% endblock %}

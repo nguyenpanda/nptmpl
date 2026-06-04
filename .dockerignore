@@ -1,0 +1,12 @@
+.git
+.venv
+__pycache__
+*.pyc
+.pytest_cache
+.idea
+dist
+*.egg-info
+.nptmpl_cache
+nptmpl_demo_env
+store
+registry.db

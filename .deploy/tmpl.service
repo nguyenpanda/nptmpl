@@ -1,0 +1,18 @@
+[Unit]
+Description=nptmpl Template Registry Server (Uvicorn)
+After=network.target
+
+[Service]
+User=nguyenpanda
+Group=nguyenpanda
+WorkingDirectory=/home/nguyenpanda/nguyenpanda/nptmpl
+Environment="PATH=/home/nguyenpanda/.local/bin:/usr/bin:/bin"
+Environment="NPTMPL_SERVER_TOKEN=nguyenpanda-nptmpl-token"
+# Generate a secret using: python3 -c "import secrets; print(secrets.token_hex(32))"
+Environment="NPTMPL_SESSION_SECRET=your-secure-session-secret"
+ExecStart=/home/nguyenpanda/.local/bin/nptmpl serve --host 0.0.0.0 --port 9090 --storage /home/nguyenpanda/.config/nptmpl/db
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

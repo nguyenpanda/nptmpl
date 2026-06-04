@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block title %}{{ page_name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Custom scrollbar */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #0a0a0a; }
+    ::-webkit-scrollbar-thumb { background: #222; border-radius: 10px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--theme-color); }
+    {{ pygments_css | safe }}
+</style>
+{% endblock %}
+
+{% block content %}
+<main class="max-w-7xl mx-auto px-6 py-12">
+    <div class="flex flex-col lg:flex-row gap-12">
+        <!-- Sidebar Navigation -->
+        <aside class="w-full lg:w-72 shrink-0">
+            <div class="sticky top-32 space-y-8">
+                <div class="bg-black border terminal-border p-6 rounded-2xl glow-soft">
+                    <h3 class="text-[10px] font-black text-zinc-500 uppercase tracking-[0.3em] mb-6">Documentation_Tree</h3>
+                    <nav class="space-y-1">
+                        <a href="/docs/README" class="block px-4 py-2.5 rounded-lg text-[11px] font-bold transition-all {{ 'neon-border text-white bg-zinc-900/50' if page_name == 'README' else 'text-zinc-500 hover:text-white hover:bg-zinc-900/30' }}">
+                            📄 OVERVIEW
+                        </a>
+                        <a href="/docs/SERVER_SETUP" class="block px-4 py-2.5 rounded-lg text-[11px] font-bold transition-all {{ 'neon-border text-white bg-zinc-900/50' if page_name == 'SERVER_SETUP' else 'text-zinc-500 hover:text-white hover:bg-zinc-900/30' }}">
+                            ⚙️ SERVER_SETUP
+                        </a>
+                        <a href="/docs/REMOTE_ACCESS" class="block px-4 py-2.5 rounded-lg text-[11px] font-bold transition-all {{ 'neon-border text-white bg-zinc-900/50' if page_name == 'REMOTE_ACCESS' else 'text-zinc-500 hover:text-white hover:bg-zinc-900/30' }}">
+                            🌐 REMOTE_ACCESS
+                        </a>
+                    </nav>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Markdown Content -->
+        <article class="flex-1 bg-zinc-900/20 border terminal-border rounded-2xl p-8 lg:p-12">
+            <div class="prose prose-invert prose-{{ site_meta.theme_color.split('-')[0] }} max-w-none">
+                {{ content | safe }}
+            </div>
+        </article>
+    </div>
+</main>
+{% endblock %}

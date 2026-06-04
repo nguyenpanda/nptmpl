@@ -1,0 +1,245 @@
+{% extends "base.html" %}
+
+{% block title %}Explorer{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Staggered Entrance Animation */
+    .template-card { 
+        opacity: 0; 
+        transform: translateY(20px); 
+        animation: cardEntrance 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+    }
+
+    @keyframes cardEntrance {
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    {% for i in range(1, 101) %}
+    .template-card:nth-child({{ i }}) { animation-delay: {{ i * 0.04 }}s; }
+    {% endfor %}
+
+    /* Card Refinement */
+    .template-card { padding: 1.25rem !important; background: rgba(12, 12, 12, 0.8); }
+    .template-title { font-size: 0.9rem !important; font-weight: 800 !important; color: #fff !important; }
+    .template-desc { 
+        font-size: 0.7rem !important; 
+        height: 2.2rem !important; 
+        line-height: 1.5; 
+        color: #d1d1d6; 
+        overflow: hidden;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        text-overflow: ellipsis;
+    }
+    .icon-box { 
+        width: 2.25rem !important; 
+        height: 2.25rem !important; 
+        font-size: 1.1rem !important; 
+        background: #000 !important;
+        border-radius: 8px !important;
+    }
+
+    /* Spark View Override */
+    body.view-mode-spark #templateContainer { grid-template-columns: 1fr !important; gap: 0.4rem !important; }
+    body.view-mode-spark .template-card { padding: 0.6rem 1.25rem !important; }
+    body.view-mode-spark .card-body { display: flex !important; align-items: center !important; gap: 1.25rem !important; padding: 0 !important; }
+    body.view-mode-spark .body-header { margin-bottom: 0 !important; }
+    body.view-mode-spark .icon-box { width: 1.75rem !important; height: 1.75rem !important; font-size: 0.85rem !important; border: none !important; }
+    body.view-mode-spark .status-badge { display: none !important; }
+    body.view-mode-spark .template-title { font-size: 0.8rem !important; margin-bottom: 0 !important; min-width: 220px !important; flex-shrink: 0; }
+    body.view-mode-spark .template-desc { display: none !important; }
+    body.view-mode-spark .template-langs { margin-bottom: 0 !important; flex: 1 !important; height: auto !important; }
+    body.view-mode-spark .card-footer { display: none !important; }
+    
+    .cmd-hint { background: rgba(255,255,255,0.08); padding: 2px 8px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.15); font-size: 10px; color: #a1a1aa; }
+</style>
+{% endblock %}
+
+{% block content %}
+<main class="max-w-full mx-auto px-6 lg:px-12 py-12">
+    <!-- Header -->
+    <div class="mb-20">
+        <div class="max-w-3xl mx-auto text-center mb-12">
+            <div class="inline-block px-4 py-1.5 border terminal-border rounded-full mb-8 bg-zinc-900/40">
+                <span class="text-[9px] font-black tracking-[0.5em] text-zinc-300 uppercase">Registry_Portal_Initialized</span>
+            </div>
+            <h1 class="text-5xl font-black tracking-tighter text-white mb-6">
+                <span class="neon-text">Template Registry Server</span>
+            </h1>
+            <div class="flex items-center justify-center gap-6 text-zinc-300 text-[11px] font-bold uppercase tracking-[0.2em]">
+                <span>{{ stats.total_templates }} Packages</span>
+                <span class="w-1 h-1 rounded-full bg-zinc-600"></span>
+                <span>{{ stats.total_clones }} Transactions</span>
+            </div>
+        </div>
+
+        <form action="/" method="get" class="max-w-4xl mx-auto">
+            <div class="relative group">
+                <div class="absolute -inset-1 neon-bg opacity-10 group-focus-within:opacity-25 transition duration-700 blur-2xl"></div>
+                <div class="relative flex items-center bg-black border-2 terminal-border rounded-xl overflow-hidden group-focus-within:border-zinc-600 transition-all">
+                    <div class="pl-6 pr-2 flex items-center gap-3">
+                        <span class="text-zinc-400 font-bold">$</span>
+                        <span class="cmd-hint">nptmpl</span>
+                    </div>
+                    <input type="text" name="q" value="{{ query or '' }}" placeholder="search_registry --all" 
+                           class="block w-full bg-transparent border-0 py-7 text-base text-white focus:ring-0 outline-none placeholder:text-zinc-800 font-medium">
+                    <div class="pr-6 flex items-center gap-6">
+                        <span class="hidden md:block text-[10px] font-bold text-zinc-600 uppercase tracking-[0.2em]">Input_Query...</span>
+                        <button type="submit" class="bg-zinc-900 border terminal-border text-white hover:neon-border px-10 py-3.5 text-[11px] font-black tracking-[0.2em] transition-all rounded-lg">
+                            EXECUTE
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-10 flex flex-wrap items-center justify-center gap-4">
+                <select name="lang" onchange="this.form.submit()" class="bg-black border-2 terminal-border rounded-xl px-8 py-3.5 text-[11px] font-black text-white uppercase tracking-widest outline-none focus:neon-border transition-all cursor-pointer hover:bg-zinc-900/50 min-w-[160px]">
+                    <option value="">L_LANG</option>
+                    {% for l in filter_options.languages %}
+                    <option value="{{ l }}" {{ 'selected' if current_filters.lang == l }}>{{ l }}</option>
+                    {% endfor %}
+                </select>
+
+                <select name="sort" onchange="this.form.submit()" class="bg-black border-2 terminal-border rounded-xl px-8 py-3.5 text-[11px] font-black text-white uppercase tracking-widest outline-none focus:neon-border transition-all cursor-pointer hover:bg-zinc-900/50 min-w-[160px]">
+                    <option value="added_date" {{ 'selected' if current_filters.sort == 'added_date' }}>S_DATE</option>
+                    <option value="clones" {{ 'selected' if current_filters.sort == 'clones' }}>S_TRAFFIC</option>
+                    <option value="name" {{ 'selected' if current_filters.sort == 'name' }}>S_ALPHA</option>
+                </select>
+
+                {% if current_filters.lang or current_filters.tag or current_filters.author or query %}
+                <a href="/" class="ml-6 text-[10px] font-black text-zinc-400 uppercase tracking-[0.2em] hover:text-white transition-all underline underline-offset-8 decoration-zinc-700 hover:decoration-white">/RESET_STATE</a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-12">
+        <!-- Expanded Sidebar -->
+        <aside class="lg:col-span-3 space-y-12">
+            <!-- Density Controls -->
+            <div class="bg-black border-2 terminal-border p-8 rounded-2xl glow-soft">
+                <div class="flex items-center gap-3 mb-10">
+                    <div class="w-1.5 h-4 neon-bg rounded-full"></div>
+                    <h3 class="text-[11px] uppercase tracking-[0.4em] font-black text-white">Display_Settings</h3>
+                </div>
+                
+                <div class="space-y-10">
+                    <div>
+                        <p class="text-[9px] font-black text-zinc-500 uppercase tracking-[0.3em] mb-5">View_Mode</p>
+                        <div class="grid grid-cols-2 p-1 bg-zinc-900/40 rounded-xl border terminal-border">
+                            <button onclick="setViewDensity('grid')" id="btn-grid" class="py-3.5 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all">Grid</button>
+                            <button onclick="setViewDensity('spark')" id="btn-spark" class="py-3.5 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all">Spark</button>
+                        </div>
+                    </div>
+
+                    <div id="colSelector">
+                        <p class="text-[9px] font-black text-zinc-500 uppercase tracking-[0.3em] mb-5">Grid_Resolution</p>
+                        <div class="grid grid-cols-4 gap-2.5">
+                            {% for n in [2, 3, 4, 6] %}
+                            <button onclick="setGridColumns({{ n }})" id="btn-col-{{ n }}" class="py-3 border terminal-border bg-zinc-900/20 rounded-lg text-[11px] font-black hover:text-white transition-all">{{ n }}</button>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tags Cloud -->
+            <div class="bg-black border-2 terminal-border p-8 rounded-2xl">
+                <div class="flex items-center gap-3 mb-10">
+                    <div class="w-1.5 h-4 neon-bg rounded-full"></div>
+                    <h3 class="text-[11px] uppercase tracking-[0.4em] font-black text-white">Tags_Atlas</h3>
+                </div>
+                <div class="flex flex-wrap gap-3">
+                    {% for t in filter_options.tags[:24] %}
+                    <a href="/?tag={{ t }}" class="px-3.5 py-2 rounded-lg bg-zinc-900/40 border terminal-border text-[10px] font-bold text-zinc-300 hover:neon-border hover:text-white transition-all {{ 'neon-border text-white bg-zinc-800' if current_filters.tag == t }}">
+                        {{ t }}
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Metrics -->
+            <div class="bg-black border-2 terminal-border p-8 rounded-2xl">
+                <div class="flex items-center gap-3 mb-10">
+                    <div class="w-1.5 h-4 neon-bg rounded-full"></div>
+                    <h3 class="text-[11px] uppercase tracking-[0.4em] font-black text-white">Node_Metrics</h3>
+                </div>
+                <div class="space-y-8">
+                    <div class="flex justify-between items-end border-b border-zinc-900 pb-6">
+                        <div>
+                            <p class="text-[9px] font-black text-zinc-500 uppercase tracking-widest">Active_Templates</p>
+                            <p class="text-3xl font-black text-white leading-none mt-2">{{ stats.total_templates }}</p>
+                        </div>
+                        <div class="flex gap-1 h-8 items-end">
+                            <div class="w-1.5 h-4 neon-bg opacity-30"></div>
+                            <div class="w-1.5 h-6 neon-bg opacity-50"></div>
+                            <div class="w-1.5 h-5 neon-bg opacity-70"></div>
+                            <div class="w-1.5 h-8 neon-bg"></div>
+                        </div>
+                    </div>
+                    <div class="flex justify-between items-end">
+                        <div>
+                            <p class="text-[9px] font-black text-zinc-500 uppercase tracking-widest">Sync_Status</p>
+                            <p class="text-sm font-black text-emerald-400 leading-none mt-3 uppercase tracking-[0.2em]">Online_Stable</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Grid -->
+        <div class="lg:col-span-9">
+            <div id="templateContainer" class="grid gap-6 transition-all duration-700">
+                {% for t in templates %}
+                <div class="template-card group relative border-2 terminal-border rounded-2xl hover:neon-border-hover transition-all duration-500">
+                    <div class="absolute -inset-0.5 neon-bg opacity-0 group-hover:opacity-10 transition-all duration-500 blur-2xl rounded-2xl"></div>
+                    
+                    <div class="card-body relative z-10">
+                        <div class="flex justify-between items-start mb-6 body-header">
+                            <div class="icon-box border-2 terminal-border flex items-center justify-center group-hover:neon-border transition-all duration-700 flex-shrink-0">
+                                {% if 'react' in t.languages or 'js' in t.languages or 'ts' in t.languages %}⚛️{% elif 'python' in t.languages %}🐍{% elif 'rust' in t.languages %}🦀{% elif 'go' in t.languages %}🐹{% else %}📦{% endif %}
+                            </div>
+                            <div class="status-badge text-right">
+                                <p class="text-[8px] font-black text-zinc-600 uppercase tracking-[0.2em] mb-1">REV_{{ t.version }}</p>
+                                <p class="text-[10px] font-black text-white uppercase tracking-tighter">{{ t.download_count }}↓</p>
+                            </div>
+                        </div>
+
+                        <h4 class="font-black tracking-tighter text-white mb-2 group-hover:neon-text transition-all template-title truncate">
+                            <a href="/{{ t.group_name }}/{{ t.name }}">{{ t.group_name }}/{{ t.name }}</a>
+                        </h4>
+                        <p class="template-desc">{{ t.description }}</p>
+                        
+                        <div class="flex flex-wrap gap-2 mt-6 mb-6 overflow-hidden template-langs">
+                            {% for lang in t.languages %}
+                            <span class="text-[7px] font-black uppercase tracking-[0.2em] px-2.5 py-1 rounded-md border terminal-border text-zinc-400 group-hover:text-white group-hover:border-zinc-600 transition-all">
+                                {{ lang }}
+                            </span>
+                            {% endfor %}
+                        </div>
+
+                        <div class="pt-5 border-t border-zinc-900 flex justify-between items-center card-footer">
+                            <a href="/?author={{ t.author }}" class="flex items-center gap-2 group/author">
+                                <div class="w-6 h-6 rounded-md bg-zinc-900 border terminal-border flex items-center justify-center text-[9px] font-black text-zinc-300 group-hover/author:neon-border group-hover/author:text-white transition-all uppercase">
+                                    {{ t.author[0] }}
+                                </div>
+                                <span class="text-[10px] font-black text-zinc-300 group-hover:text-white transition-all">{{ t.author }}</span>
+                            </a>
+                            <span class="text-[9px] font-bold text-zinc-500 uppercase tracking-widest">{{ t.added_date.split(' ')[0] }}</span>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            {% if not templates %}
+            <div class="py-40 text-center border-2 border-dashed border-zinc-800 rounded-3xl">
+                <p class="text-zinc-700 font-black uppercase tracking-[0.5em] text-sm">Target_Node_Empty</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</main>
+{% endblock %}

@@ -1,0 +1,42 @@
+# Python artifacts
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Environment
+.venv
+.env
+.python-version
+
+# IDEs
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Project specific
+tests/data/synthetic_templates/
+tests/data/realistic_templates/
+nptmpl_demo_env/
+scripts/__pycache__/
+test_cli_scale_root/
+test_workflow_root/
+test_metadata_dir/
+test_config_root/
+test_store/
+test_adv_root/
+test_init_config/
+
+# Local registry (default path)
+config.yaml
+.nptmpl/
+.note
+*.db
+*.db-shm
+*.db-wal

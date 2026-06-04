@@ -1,0 +1,15 @@
+services:
+  nptmpl-server:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    ports:
+      - "9090:9090"
+    volumes:
+      - nptmpl-data:/app/store
+    environment:
+      - NPTMPL_SERVER_TOKEN=demo-token-123
+    restart: unless-stopped
+
+volumes:
+  nptmpl-data:
