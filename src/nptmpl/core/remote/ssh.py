@@ -65,7 +65,7 @@ class SshTransport(RemoteTransport):
         self.client = None
         self.sftp = None
 
-    def fetch_metadata(self, target: str) -> TemplateMetadata:
+    def fetch_metadata(self, target: str, is_clone: bool = False) -> TemplateMetadata:
         self._connect()
         try:
             group, name, version = self._resolve_target(target)

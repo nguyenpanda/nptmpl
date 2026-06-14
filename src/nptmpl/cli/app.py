@@ -261,8 +261,6 @@ class CLIApp:
 
         if target_type in (TargetType.HTTP, TargetType.SSH):
             remote = self._ensure_auth(context)
-            meta = remote.fetch_metadata(remote_target)
-            self._prompt_variables(meta, variables)
             try:
                 self.store.clone_template(remote_target, args.dest_dir, variables=variables, remote=remote)
             except DestinationNotEmptyError as e:

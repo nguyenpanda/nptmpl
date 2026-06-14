@@ -31,6 +31,7 @@ def get_site_meta(config: ConfigManager) -> dict:
     ui_cfg["theme_hex"] = color_data["hex"]
     ui_cfg["theme_glow"] = color_data["glow"]
     ui_cfg["theme_color"] = color_key
+    ui_cfg["public_url"] = config.get_public_url()
     return ui_cfg
 
 def fix_markdown_paths(content: str) -> str:

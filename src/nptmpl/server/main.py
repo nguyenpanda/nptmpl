@@ -2,7 +2,7 @@ import os
 import secrets
 
 import uvicorn
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import RedirectResponse, JSONResponse
 from starlette.middleware.sessions import SessionMiddleware
@@ -16,6 +16,7 @@ from nptmpl.server.api import router as api_router, download_router, inspect_rou
 from nptmpl.server.web import router as web_router
 from nptmpl.server.routes.public import templates
 from nptmpl.server.ui_utils import get_site_meta
+from nptmpl.server.ws import manager
 
 
 def create_app(storage_path: Path, config: Optional[ConfigManager] = None) -> FastAPI:
@@ -40,12 +41,41 @@ def create_app(storage_path: Path, config: Optional[ConfigManager] = None) -> Fa
     secret_key = os.environ.get("NPTMPL_SESSION_SECRET") or config.get_auth_token() or secrets.token_hex(32)
     app.add_middleware(SessionMiddleware, secret_key=secret_key)
 
+    # WebSocket Routes (High Priority)
+    @app.websocket("/ws")
+    async def websocket_endpoint(websocket: WebSocket):
+        await manager.connect(websocket)
+        try:
+            while True:
+                data = await websocket.receive_text()
+                if data == "ping":
+                    await websocket.send_text("pong")
+        except WebSocketDisconnect:
+            manager.disconnect(websocket)
+        except Exception:
+            manager.disconnect(websocket)
+
+    @app.get("/ws")
+    async def websocket_info():
+        return {
+            "status": "ok", 
+            "message": "WebSocket endpoint active. Use wss:// to connect."
+        }
+
+    @app.get("/ws/diag")
+    async def websocket_diagnostic():
+        return {
+            "status": "ok", 
+            "message": "WebSocket diagnostic endpoint",
+            "active_connections": len(manager.active_connections)
+        }
+
     # Static files
     static_path = Path(__file__).parent / "static"
     if static_path.exists():
         app.mount("/static", StaticFiles(directory=str(static_path)), name="static")
 
-    # Routes
+    # App routers
     app.include_router(api_router)
     app.include_router(download_router)
     app.include_router(inspect_router)
@@ -125,11 +155,13 @@ def start_server(host: str, port: int, storage: str,
             port=port, 
             reload=True, 
             factory=True,
-            reload_dirs=[str(package_src)]
+            reload_dirs=[str(package_src)],
+            proxy_headers=True,
+            forwarded_allow_ips="*"
         )
     else:
         app = create_app(storage_path, config=config)
         if not enable_docs:
             app.docs_url = None
             app.redoc_url = None
-        uvicorn.run(app, host=host, port=port)
+        uvicorn.run(app, host=host, port=port, proxy_headers=True, forwarded_allow_ips="*")

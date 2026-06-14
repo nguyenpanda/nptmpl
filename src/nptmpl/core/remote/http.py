@@ -67,9 +67,10 @@ class HttpTransport(RemoteTransport):
 
         raise last_exception or NetworkError(f"Failed to connect to {url}")
 
-    def fetch_metadata(self, target: str) -> TemplateMetadata:
+    def fetch_metadata(self, target: str, is_clone: bool = False) -> TemplateMetadata:
         base_target = target.split("@")[0]
-        response = self._request("GET", f"api/v1/templates/{base_target}")
+        params = {"clone": "true"} if is_clone else {}
+        response = self._request("GET", f"api/v1/templates/{base_target}", params=params)
         data = response.json()
         meta_dict = data.get("metadata", data)
         return TemplateMetadata.from_dict(meta_dict)

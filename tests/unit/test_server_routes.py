@@ -30,7 +30,17 @@ def mock_storage(tmp_path):
 def client(mock_db, mock_storage):
     app = create_app(mock_storage)
     app.dependency_overrides[get_admin_user] = lambda: "admin"
-    app.dependency_overrides[get_config] = lambda: MagicMock()
+    
+    mock_config = MagicMock()
+    mock_config.get_ui_config.return_value = {
+        "title": "Test Server",
+        "theme_color": "emerald-500",
+        "logo_text": "nptmpl",
+        "github_url": "#",
+        "author_name": "Tester"
+    }
+    mock_config.get_public_url.return_value = "http://localhost:9090"
+    app.dependency_overrides[get_config] = lambda: mock_config
     
     app.state.db = mock_db
     app.state.storage_path = mock_storage

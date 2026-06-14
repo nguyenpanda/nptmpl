@@ -164,6 +164,9 @@ class TemplateStore:
                 if not template.get_version_path(version).exists():
                     logger.info(f"Fetching {group}/{name} @{version} from remote...")
                     self._fetch_from_remote(f"{group}/{name}@{version}", remote)
+                else:
+                    remote.fetch_metadata(target_str, is_clone=True)
+                
                 target_str = f"{group}/{name}@{version}"
             except Exception as e:
                 logger.warning(f"Remote fetch failed: {e}. Falling back to local.")

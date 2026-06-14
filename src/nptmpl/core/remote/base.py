@@ -7,7 +7,7 @@ class RemoteTransport(ABC):
     """Abstract base class defining the interface for remote template operations."""
 
     @abstractmethod
-    def fetch_metadata(self, target: str) -> TemplateMetadata:
+    def fetch_metadata(self, target: str, is_clone: bool = False) -> TemplateMetadata:
         """Fetches metadata for a remote template."""
         pass
 

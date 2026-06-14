@@ -1,7 +1,7 @@
 import pytest
 import json
 from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, patch, AsyncMock
 from fastapi.testclient import TestClient
 from fastapi import FastAPI
 from nptmpl.server.api import router, download_router, inspect_router
@@ -56,6 +56,22 @@ def test_get_template(client, mock_db):
     response = client.get("/api/v1/templates/group1/name1")
     assert response.status_code == 200
     assert response.json()["target"] == "group1/name1"
+    mock_db.increment_download.assert_not_called()
+
+@patch("nptmpl.server.api.manager.broadcast", new_callable=AsyncMock)
+def test_get_template_with_clone(mock_broadcast, client, mock_db):
+    mock_db.get_template.return_value = {
+        "group_name": "group1", "name": "name1", "versions": [{"version": "1.0.0"}],
+        "download_count": 5
+    }
+    response = client.get("/api/v1/templates/group1/name1?clone=true")
+    assert response.status_code == 200
+    mock_db.increment_download.assert_called_with("group1", "name1")
+    
+    mock_broadcast.assert_called_once()
+    broadcast_data = mock_broadcast.call_args[0][0]
+    assert broadcast_data["type"] == "traffic_update"
+    assert broadcast_data["count"] == 5
 
 def test_get_template_not_found(client, mock_db):
     mock_db.get_template.return_value = None

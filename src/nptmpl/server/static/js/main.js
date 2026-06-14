@@ -39,6 +39,140 @@ function getFileIconSVG(path, isDirectory) {
     return `<svg class="w-4 h-4" style="color: ${config.color}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="${config.icon}"></path></svg>`;
 }
 
+// Real-time Updates (WebSockets)
+let socket = null;
+let reconnectInterval = 5000;
+
+function updateWsStatus(state) {
+    const dot = document.getElementById('ws-status-dot');
+    const text = document.getElementById('ws-status-text');
+    if (!dot || !text) return;
+
+    if (state === 'connected') {
+        dot.className = 'w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]';
+        text.innerText = 'Link_Established';
+        text.className = 'text-[8px] font-black text-emerald-500 uppercase tracking-widest';
+    } else if (state === 'reconnecting') {
+        dot.className = 'w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse';
+        text.innerText = 'Reconnecting...';
+        text.className = 'text-[8px] font-black text-amber-500 uppercase tracking-widest';
+    } else {
+        dot.className = 'w-1.5 h-1.5 rounded-full bg-zinc-600';
+        text.innerText = 'Link_Offline';
+        text.className = 'text-[8px] font-black text-zinc-500 uppercase tracking-widest';
+    }
+}
+
+function setupWebSockets() {
+    let wsUrl;
+    const siteMeta = window.NPTMPL_SITE_META || {};
+    
+    // Always match the page's protocol to avoid mixed-content blocks (https -> wss, http -> ws)
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    
+    // Use the public_url host if available to ensure we connect to the right endpoint
+    let host = window.location.host;
+    if (siteMeta.public_url) {
+        try {
+            host = new URL(siteMeta.public_url).host;
+        } catch (e) {
+            console.warn('Invalid public_url, falling back to location.host');
+        }
+    }
+    
+    wsUrl = `${protocol}//${host}/ws`;
+    
+    console.debug('Connecting to WebSocket:', wsUrl);
+    socket = new WebSocket(wsUrl);
+
+    socket.onopen = function() {
+        console.debug('WS Connected successfully');
+        updateWsStatus('connected');
+    };
+
+    socket.onmessage = function(event) {
+        try {
+            const data = JSON.parse(event.data);
+            console.debug('WS Message Received:', data);
+
+            if (data.type === 'traffic_update') {
+                handleTrafficUpdate(data);
+            } else if (data.type === 'registry_update') {
+                handleRegistryUpdate(data);
+            }
+        } catch (e) {
+            console.error('Error parsing WS message:', e);
+        }
+    };
+
+    socket.onclose = function(e) {
+        console.warn(`WS Connection closed (code=${e.code}, reason=${e.reason}). Reconnecting in ${reconnectInterval/1000}s...`);
+        updateWsStatus('reconnecting');
+        if (e.code === 1006) {
+            console.error('WS Connection failed (Abnormal Closure). This often means a proxy or tunnel is dropping the connection.');
+        }
+        setTimeout(setupWebSockets, reconnectInterval);
+    };
+
+    socket.onerror = function(err) {
+        console.error('WS Connection error detected. Check browser console for security blocks (e.g. Mixed Content or CSP).');
+        updateWsStatus('offline');
+        socket.close(); 
+    };
+}
+
+function handleTrafficUpdate(data) {
+    const { group, name, count } = data;
+    
+    const findAndAnimate = (id) => {
+        const el = document.getElementById(id);
+        if (el) {
+            const currentVal = parseInt(el.innerText) || 0;
+            animateValue(el, currentVal, count, 400);
+            return true;
+        }
+        return false;
+    };
+
+    findAndAnimate(`traffic-${group}-${name}`);
+    findAndAnimate(`traffic-${group}-${name}-detail`);
+    findAndAnimate(`traffic-${group}-${name}-admin`);
+
+    const totalClonesEl = document.getElementById('total-clones');
+    if (totalClonesEl) {
+        const currentTotalText = totalClonesEl.innerText.split(' ')[0];
+        const currentTotal = parseInt(currentTotalText) || 0;
+        totalClonesEl.innerText = `${currentTotal + 1} Transactions`;
+    }
+    
+    const adminTotalClonesEl = document.getElementById('total-clones-admin');
+    if (adminTotalClonesEl) {
+        const currentTotal = parseInt(adminTotalClonesEl.innerText) || 0;
+        animateValue(adminTotalClonesEl, currentTotal, currentTotal + 1, 400);
+    }
+}
+
+function handleRegistryUpdate(data) {
+    const { action, target, version } = data;
+    const isPush = action === 'push';
+    const msg = isPush ? `NODE_ADDED: ${target} v${version}` : `NODE_REMOVED: ${target}`;
+    showToast(msg, isPush ? 'success' : 'warning');
+}
+
+function animateValue(obj, start, end, duration) {
+    if (start === end) return;
+    let startTimestamp = null;
+    const step = (timestamp) => {
+        if (!startTimestamp) startTimestamp = timestamp;
+        const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+        obj.innerHTML = Math.floor(progress * (end - start) + start);
+        if (progress < 1) {
+            window.requestAnimationFrame(step);
+        }
+    };
+    window.requestAnimationFrame(step);
+}
+
 // Density and Grid Controls
 function setViewDensity(mode) {
     const body = document.getElementById('mainBody');
@@ -75,11 +209,9 @@ function setGridColumns(n) {
 
     localStorage.setItem('nptmpl_grid_cols', n);
     
-    // Remove all possible col classes
     container.classList.remove('md:grid-cols-2', 'md:grid-cols-3', 'md:grid-cols-4', 'md:grid-cols-6');
     container.classList.add(`md:grid-cols-${n}`);
 
-    // Update UI
     [2, 3, 4, 6].forEach(num => {
         const btn = document.getElementById(`btn-col-${num}`);
         if (btn) {
@@ -101,12 +233,23 @@ function showToast(message, type = 'success') {
 
     const toast = document.createElement('div');
     const isError = type === 'error';
+    const isWarning = type === 'warning';
     
-    toast.className = `toast-enter flex items-center p-5 w-full max-w-xs text-white bg-zinc-950 rounded-2xl shadow-2xl border-2 ${isError ? 'border-red-500/50' : 'neon-border'}`;
+    let borderClass = 'neon-border';
+    let iconBgClass = 'bg-emerald-500/20 text-white';
+    if (isError) {
+        borderClass = 'border-red-500/50';
+        iconBgClass = 'bg-red-900/40 text-red-500';
+    } else if (isWarning) {
+        borderClass = 'border-amber-500/50';
+        iconBgClass = 'bg-amber-900/40 text-amber-500';
+    }
+
+    toast.className = `toast-enter flex items-center p-5 w-full max-w-xs text-white bg-zinc-950 rounded-2xl shadow-2xl border-2 ${borderClass}`;
     toast.innerHTML = `
-        <div class="inline-flex items-center justify-center shrink-0 w-10 h-10 rounded-xl ${isError ? 'bg-red-900/40 text-red-500' : 'bg-emerald-500/20 text-white'}">
-            ${isError 
-                ? '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"></path></svg>'
+        <div class="inline-flex items-center justify-center shrink-0 w-10 h-10 rounded-xl ${iconBgClass}">
+            ${isError || isWarning
+                ? '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>'
                 : '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path></svg>'
             }
         </div>
@@ -123,10 +266,11 @@ function showToast(message, type = 'success') {
 
 // Initialization
 document.addEventListener('DOMContentLoaded', () => {
-    // Restore display settings
     const savedDensity = localStorage.getItem('nptmpl_view_density') || 'grid';
     const savedCols = parseInt(localStorage.getItem('nptmpl_grid_cols')) || 3;
     
     setViewDensity(savedDensity);
     setGridColumns(savedCols);
+
+    setupWebSockets();
 });

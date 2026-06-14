@@ -22,6 +22,7 @@ from nptmpl.server.auth import get_api_key
 from nptmpl.server.inspector import TarballInspector
 from nptmpl.server.deps import get_db, get_storage
 from nptmpl.server.ui_utils import fix_markdown_paths
+from nptmpl.server.ws import manager
 
 
 router = APIRouter(prefix="/api/v1/templates")
@@ -68,6 +69,15 @@ async def download_template_archive(
         raise HTTPException(status_code=404, detail="Archive not found")
     
     db.increment_download(group, name)
+    template = db.get_template(group, name)
+    if template:
+        await manager.broadcast({
+            "type": "traffic_update",
+            "group": group,
+            "name": name,
+            "count": template["download_count"]
+        })
+
     headers = {
         "Content-Disposition": f'attachment; filename="{filename}"; filename*=UTF-8\'\'{filename}',
         "X-Content-Type-Options": "nosniff",
@@ -98,7 +108,6 @@ async def download_template(
     if not file_path.exists() or not FileSystemEngine._is_safe_path(storage, file_path):
         raise HTTPException(status_code=404, detail="Archive not found")
     
-    db.increment_download(group, name)
     return FileResponse(file_path, media_type="application/gzip", filename=f"{group}_{name}_{version}.tar.gz")
 
 @router.get("")
@@ -121,13 +130,25 @@ async def list_templates(
     }
 
 @router.get("/{group}/{name}")
-async def get_template(group: str, name: str, db: DatabaseManager = Depends(get_db)) -> Dict[str, Any]:
+async def get_template(group: str, name: str, clone: bool = False, db: DatabaseManager = Depends(get_db)) -> Dict[str, Any]:
     group, name = validate_safe_path_component(group), validate_safe_path_component(name)
-    template = db.get_template(group, name)
+    if clone:
+        db.increment_download(group, name)
+        template = db.get_template(group, name)
+        if template:
+            await manager.broadcast({
+                "type": "traffic_update",
+                "group": template["group_name"],
+                "name": template["name"],
+                "count": template["download_count"]
+            })
+    else:
+        template = db.get_template(group, name)
+        
     if not template:
         raise HTTPException(status_code=404, detail="Template not found")
     return {
-        "target": f"{group}/{name}", 
+        "target": f"{template['group_name']}/{template['name']}", 
         "version": template["versions"][0]["version"], 
         "metadata": template
     }
@@ -199,6 +220,13 @@ async def push_template(
 
             readme = TarballInspector.extract_readme(tarball_path)
             db.add_template_version(metadata, readme)
+            
+            await manager.broadcast({
+                "type": "registry_update",
+                "action": "push",
+                "target": f"{group}/{name}",
+                "version": version
+            })
         except Exception as e:
             shutil.rmtree(version_dir)
             _cleanup_empty_parents(storage, group, name)
@@ -212,7 +240,7 @@ async def push_template(
         }
 
 @router.delete("/{group}/{name}/{version}", include_in_schema=False)
-def delete_version(
+async def delete_version(
     group: str, name: str, version: str,
     db: DatabaseManager = Depends(get_db), storage: Path = Depends(get_storage), _token: str = Depends(get_api_key)
 ):
@@ -230,6 +258,13 @@ def delete_version(
         if version_dir.exists():
             shutil.rmtree(version_dir)
         _cleanup_empty_parents(storage, group, name)
+        
+        await manager.broadcast({
+            "type": "registry_update",
+            "action": "delete",
+            "target": f"{group}/{name}",
+            "version": version
+        })
         
         return {"message": f"Version {version} deleted"}
 

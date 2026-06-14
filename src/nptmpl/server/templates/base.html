@@ -7,6 +7,9 @@
     <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
     <link rel="icon" type="image/x-icon" href="{{ url_for('static', path='media/favicon/favicon.ico') }}">
     <link rel="stylesheet" href="{{ url_for('static', path='css/main.css') }}">
+    <script>
+        window.NPTMPL_SITE_META = {{ site_meta | tojson | safe }};
+    </script>
     <style>
         :root {
             --theme-color: {{ site_meta.theme_hex }};
@@ -51,8 +54,14 @@
 
     <footer class="mt-20 py-16 border-t terminal-border text-center">
         {% block footer_extra %}{% endblock %}
+        <div class="flex items-center justify-center gap-4 mb-6">
+            <div id="ws-status" class="flex items-center gap-2 px-3 py-1 rounded-full border terminal-border bg-black/40">
+                <div id="ws-status-dot" class="w-1.5 h-1.5 rounded-full bg-zinc-600"></div>
+                <span id="ws-status-text" class="text-[8px] font-black text-zinc-500 uppercase tracking-widest">Link_Offline</span>
+            </div>
+        </div>
         <p class="text-[9px] font-black text-zinc-600 tracking-[0.5em] uppercase">
-            {{ site_meta.logo_text.upper() }} // &copy; 2024 {{ site_meta.author_name.upper().replace(' ', '') }} // POWERED_BY_NPTMPL
+            {{ site_meta.logo_text.upper() }} // &copy; 2026 {{ site_meta.author_name.upper().replace(' ', '') }} // POWERED_BY_NPTMPL
         </p>
     </footer>
 

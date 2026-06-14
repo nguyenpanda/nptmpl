@@ -71,7 +71,7 @@
             <div class="flex items-center justify-center gap-6 text-zinc-300 text-[11px] font-bold uppercase tracking-[0.2em]">
                 <span>{{ stats.total_templates }} Packages</span>
                 <span class="w-1 h-1 rounded-full bg-zinc-600"></span>
-                <span>{{ stats.total_clones }} Transactions</span>
+                <span id="total-clones">{{ stats.total_clones }} Transactions</span>
             </div>
         </div>
 
@@ -203,7 +203,7 @@
                             </div>
                             <div class="status-badge text-right">
                                 <p class="text-[8px] font-black text-zinc-600 uppercase tracking-[0.2em] mb-1">REV_{{ t.version }}</p>
-                                <p class="text-[10px] font-black text-white uppercase tracking-tighter">{{ t.download_count }}↓</p>
+                                <p class="text-[10px] font-black text-white uppercase tracking-tighter"><span id="traffic-{{ t.group_name }}-{{ t.name }}">{{ t.download_count }}</span>↓</p>
                             </div>
                         </div>
 
