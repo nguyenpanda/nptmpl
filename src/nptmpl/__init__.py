@@ -6,7 +6,7 @@ from nptmpl.core.errors import NptmplError
 from nptmpl.core.engine import FileSystemEngine
 
 
-__version__ = "1.0.0"
+__version__ = "1.1.0"
 
 __all__ = [
     "TemplateStore",

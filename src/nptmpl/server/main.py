@@ -24,7 +24,7 @@ def create_app(storage_path: Path, config: Optional[ConfigManager] = None) -> Fa
     app = FastAPI(
         title="nptmpl Registry",
         description="Distributed CLI Template Manager Server",
-        version="1.0.0",
+        version="1.1.0",
         docs_url="/api/docs",
         redoc_url="/api/redoc"
     )
